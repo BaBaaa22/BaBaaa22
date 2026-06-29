@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Eye, EyeOff, Search, Leaf, Flame } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, Search, Leaf, Flame, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -159,8 +159,27 @@ export default function AdminMenu() {
 function EditItemDialog({ item, isCreating, onClose, onSaved }) {
   const [form, setForm] = useState(item);
   const [saving, setSaving] = useState(false);
+  const [genDesc, setGenDesc] = useState(false);
 
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const generateDescription = async () => {
+    if (!form.name) return;
+    setGenDesc(true);
+    try {
+      const res = await base44.functions.invoke('generateItemDescription', {
+        name: form.name,
+        category: form.category,
+        is_vegetarian: form.is_vegetarian,
+        is_spicy: form.is_spicy,
+        allergens: form.allergens || [],
+      });
+      if (res.data?.description) update('description', res.data.description);
+    } catch {
+      // fail-soft: leave the field as-is if the AI call fails
+    }
+    setGenDesc(false);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -186,7 +205,18 @@ function EditItemDialog({ item, isCreating, onClose, onSaved }) {
             <Input value={form.name} onChange={e => update('name', e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-gray-500">Description</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-gray-500">Description</Label>
+              <button
+                type="button"
+                onClick={generateDescription}
+                disabled={genDesc || !form.name}
+                className="flex items-center gap-1 text-xs font-semibold text-green-600 hover:text-green-700 disabled:opacity-50"
+              >
+                {genDesc ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {genDesc ? 'Generating…' : 'Generate using AI'}
+              </button>
+            </div>
             <Textarea value={form.description || ''} onChange={e => update('description', e.target.value)} className="mt-1" rows={2} />
           </div>
           <div className="grid grid-cols-2 gap-4">

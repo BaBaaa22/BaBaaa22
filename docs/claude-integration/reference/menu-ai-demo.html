@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Edit Item — Generate using AI</title>
+<style>
+  *{box-sizing:border-box;} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827;}
+  .topbar{background:#111827;color:#fff;height:8px;}
+  .head{display:flex;align-items:center;gap:10px;padding:14px 22px;background:#fff;border-bottom:1px solid #e5e7eb;}
+  .head .back{color:#6b7280;font-size:18px;} .head h1{font-size:16px;margin:0;}
+  .wrap{max-width:1000px;margin:22px auto;padding:0 22px;display:grid;grid-template-columns:1fr 360px;gap:28px;}
+  label{font-size:11px;color:#6b7280;display:block;margin-bottom:4px;}
+  .req::after{content:" *";color:#ef4444;}
+  input,textarea,select{width:100%;border:1px solid #d1d5db;border-radius:8px;padding:9px 11px;font-size:14px;font-family:inherit;background:#fff;}
+  textarea{resize:none;}
+  .row{display:flex;gap:14px;margin-bottom:16px;}
+  .row>div{flex:1;}
+  .field{margin-bottom:16px;}
+  .toggle{width:38px;height:22px;border-radius:9999px;background:#22c55e;position:relative;}
+  .toggle::after{content:"";position:absolute;top:2px;left:18px;width:18px;height:18px;border-radius:50%;background:#fff;}
+  .desc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .desc-head label{margin:0;}
+  .genbtn{display:inline-flex;align-items:center;gap:6px;border:none;background:#16a34a;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;}
+  .genbtn:disabled{opacity:.6;cursor:default;}
+  .spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .upload{border:1px dashed #d1d5db;border-radius:12px;background:#fafafa;padding:22px;text-align:center;}
+  .upload p{font-size:12px;color:#6b7280;margin:0 0 12px;}
+  .addimg{margin-top:14px;background:#22c55e;color:#fff;border:none;border-radius:8px;padding:10px;width:100%;font-weight:700;}
+  .modhead{margin-top:8px;padding:14px 0;border-top:1px solid #e5e7eb;font-weight:700;font-size:14px;}
+  .footer{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:12px;padding:14px 22px;margin-top:24px;}
+  .btn{padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;border:1px solid #d1d5db;background:#fff;}
+  .btn.save{background:#16a34a;color:#fff;border:none;}
+  .fade{animation:fade .4s ease;} @keyframes fade{from{background:#ecfdf5;}to{background:#fff;}}
+  .sparkle{font-size:13px;}
+</style>
+</head>
+<body>
+  <div class="topbar"></div>
+  <div class="head"><span class="back">←</span><h1>Edit Item</h1></div>
+
+  <div class="wrap">
+    <div>
+      <div class="field"><label class="req">Item name</label><input value="31b. 12inch Mexicano" /></div>
+      <div class="row">
+        <div><label class="req">Price</label><input value="9.30" /></div>
+        <div><label>Min</label><input value="0" /></div>
+        <div><label>Max</label><input value="0" /></div>
+      </div>
+      <div class="row">
+        <div><label>VAT</label><div class="toggle"></div></div>
+        <div><label>Item Availability</label><select><option>● Available</option></select></div>
+      </div>
+
+      <div class="field">
+        <div class="desc-head">
+          <label>Description</label>
+          <button class="genbtn" id="gen"><span class="sparkle">✦</span> Generate using AI</button>
+        </div>
+        <textarea id="desc" rows="3" placeholder="Describe this item, or generate it with AI…"></textarea>
+      </div>
+
+      <div class="field"><label>Schedule</label><select><option>No Schedule</option></select></div>
+      <div class="modhead">Modifier Groups</div>
+      <div style="font-size:13px;color:#6b7280;padding:8px 0;">12inch – Base (2 modifiers) · Linked items: 1b 12inch Margherita…</div>
+    </div>
+
+    <div>
+      <label style="font-weight:700;color:#111827;margin-bottom:8px;">Upload Image</label>
+      <div class="upload">
+        <p>Did you know that items with pictures tend to get 50% more orders?</p>
+        <div style="font-size:26px;">📷</div>
+        <button class="addimg">ADD IMAGE</button>
+        <p style="margin-top:10px;font-size:11px;">Dimension 1280×720 · JPG/PNG · Max 5MB</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="btn">CANCEL</button>
+    <button class="btn save">SAVE</button>
+  </div>
+
+<script>
+  const SAMPLE = "Our 12-inch Mexicano: a fiery base of jalapeños, spiced beef and red onion under bubbling mozzarella, finished with a swirl of smoky chipotle. Vegetarian swap available.";
+  const btn = document.getElementById('gen');
+  const desc = document.getElementById('desc');
+  btn.onclick = () => {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generating…';
+    desc.value = '';
+    setTimeout(() => {
+      // simulate Claude (Haiku) streaming the description back
+      let i = 0;
+      const tick = setInterval(() => {
+        i += 4;
+        desc.value = SAMPLE.slice(0, i);
+        desc.classList.add('fade');
+        if (i >= SAMPLE.length) {
+          clearInterval(tick);
+          btn.disabled = false;
+          btn.innerHTML = '<span class="sparkle">✦</span> Generate using AI';
+        }
+      }, 18);
+    }, 1100);
+  };
+</script>
+</body>
+</html>
