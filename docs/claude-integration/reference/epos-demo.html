@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Marco's Express EPOS — live AI demo</title>
+<style>
+  *{box-sizing:border-box;} html,body{margin:0;height:100%;}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#eef1f4;color:#111827;}
+  .app{display:flex;height:100vh;}
+  /* left: orders list */
+  .list{width:340px;background:#fff;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;}
+  .brand{background:#c0392b;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;}
+  .brand .logo{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:900;}
+  .brand b{font-size:15px;}
+  .tabs{display:flex;border-bottom:1px solid #e5e7eb;}
+  .tab{flex:1;text-align:center;padding:11px 0;font-size:11px;font-weight:700;letter-spacing:.04em;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;}
+  .tab.active{color:#c0392b;border-bottom-color:#c0392b;}
+  .tickets{flex:1;overflow:auto;}
+  .ticket{padding:12px 16px;border-bottom:1px solid #f3f4f6;cursor:pointer;display:flex;gap:10px;align-items:center;}
+  .ticket:hover{background:#f9fafb;} .ticket.sel{background:#fff7f6;box-shadow:inset 3px 0 0 #c0392b;}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+  .ticket .who{font-weight:700;font-size:14px;} .ticket .meta{font-size:11px;color:#6b7280;}
+  .ticket .st{margin-left:auto;font-size:10px;font-weight:800;text-transform:uppercase;color:#fff;padding:2px 7px;border-radius:9999px;}
+  .newbtn{margin:12px;padding:10px;border:none;border-radius:9px;background:#111827;color:#fff;font-weight:700;cursor:pointer;}
+  /* right: detail */
+  .detail{flex:1;display:flex;flex-direction:column;background:#fff;}
+  .actionbar{display:flex;border-bottom:1px solid #e5e7eb;font-size:11px;color:#6b7280;}
+  .actionbar div{padding:11px 14px;border-right:1px solid #e5e7eb;}
+  .aistrip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 20px;border-bottom:1px solid #f3f4f6;background:#f9fafb;min-height:42px;}
+  .aistrip .thinking{font-size:12px;color:#9ca3af;font-style:italic;display:flex;align-items:center;gap:6px;}
+  .spinner{width:12px;height:12px;border:2px solid #d1d5db;border-top-color:#c0392b;border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:9999px;font-size:12px;font-weight:600;animation:pop .25s ease;}
+  @keyframes pop{from{transform:scale(.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .station{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#fff;}
+  .st-pizza{background:#c0392b;}.st-fryer{background:#d97706;}.st-grill{background:#b45309;}.st-cold{background:#0d9488;}.st-drinks{background:#374151;}.st-dessert{background:#16a34a;}
+  .eta-green{background:#dcfce7;color:#15803d;}.eta-amber{background:#fef3c7;color:#b45309;}.eta-red{background:#fee2e2;color:#b91c1c;}
+  .allergen{background:#dc2626;color:#fff;font-weight:800;}
+  .cust{padding:16px 20px;border-bottom:1px solid #f3f4f6;}
+  .cust .row{display:flex;gap:8px;align-items:flex-start;margin-bottom:4px;}
+  .cust .name{font-weight:700;font-size:14px;} .cust .oid{font-size:12px;color:#6b7280;}
+  .note{margin-top:8px;font-size:12px;color:#dc2626;font-weight:600;background:#fef2f2;border-radius:6px;padding:5px 9px;}
+  .items{flex:1;padding:16px 20px;font-size:14px;}
+  .items .r{display:flex;justify-content:space-between;padding:3px 0;}
+  .items .r b{font-weight:600;}
+  .foot{padding:14px 20px;border-top:1px solid #f3f4f6;}
+  .adv{width:100%;padding:12px;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;}
+  .b-blue{background:#3b82f6;}.b-orange{background:#f97316;}.b-green{background:#16a34a;}.b-gray{background:#9ca3af;}
+  .empty{flex:1;display:flex;align-items:center;justify-content:center;color:#9ca3af;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="list">
+    <div class="brand"><div class="logo">M</div><b>Marco's Express — EPOS</b></div>
+    <div class="tabs"><div class="tab active">CURRENT</div><div class="tab">ON THE WAY</div><div class="tab">COMPLETED</div></div>
+    <div class="tickets" id="tickets"></div>
+    <button class="newbtn" id="newbtn">＋ New incoming order</button>
+  </div>
+  <div class="detail" id="detail"><div class="empty">Select an order</div></div>
+</div>
+
+<script>
+const STATUS = { received:{label:'New',dot:'#3b82f6',chip:'#3b82f6',next:'in_kitchen',btn:'On the way',cls:'b-blue'},
+  in_kitchen:{label:'Preparing',dot:'#f97316',chip:'#f97316',next:'ready',btn:'Mark Ready',cls:'b-orange'},
+  ready:{label:'Ready',dot:'#16a34a',chip:'#16a34a',next:'completed',btn:'Complete',cls:'b-green'},
+  completed:{label:'Done',dot:'#9ca3af',chip:'#9ca3af',next:null,btn:'Done',cls:'b-gray'} };
+const STATIONS={pizza:'st-pizza',fryer:'st-fryer',grill:'st-grill',cold:'st-cold',drinks:'st-drinks',dessert:'st-dessert'};
+
+let orders = [
+  { id:1042, who:'Pickup : Sam', type:'pickup', oid:1042, placedAgo:2, status:'received',
+    items:[['2 × Margherita (12")','£21.00'],['1 × Chips','£3.00']],
+    ai:{station:'pizza',prep:14,allergens:[]} },
+  { id:1041, who:'Pickup : Dani', type:'pickup', oid:1041, placedAgo:19, status:'in_kitchen',
+    items:[['1 × Garlic Bread','£3.50'],['2 × Coke','£3.60']],
+    ai:{station:'drinks',prep:8,allergens:[]} },
+];
+let selId = 1042;
+const now = () => Date.now();
+let clock = now();
+
+function etaChip(o){
+  if(!o.ai || !o.ai.prep) return '';
+  const elapsed = Math.floor((clock - o.placedAt)/60000);
+  const rem = o.ai.prep - elapsed;
+  const cls = rem<0?'eta-red':rem<=5?'eta-amber':'eta-green';
+  const txt = rem<0?`Overdue ${Math.abs(rem)}m`:`ETA ~${rem}m`;
+  return `<span class="chip eta ${cls}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>${txt}</span>`;
+}
+
+function renderList(){
+  const t=document.getElementById('tickets');
+  t.innerHTML = orders.filter(o=>['received','in_kitchen'].includes(o.status)).map(o=>{
+    const s=STATUS[o.status];
+    const stn = o.ai?.station ? `<span class="st ${STATIONS[o.ai.station]}">${o.ai.station}</span>` : `<span class="st" style="background:#cbd5e1">…</span>`;
+    return `<div class="ticket ${o.id===selId?'sel':''}" data-id="${o.id}">
+      <span class="dot" style="background:${s.dot}"></span>
+      <div><div class="who">${o.who}</div><div class="meta">#${o.oid} · ${s.label}${o.ai?.allergens?.length?' · ⚠ allergen':''}</div></div>
+      ${stn}</div>`;
+  }).join('') || '<div style="padding:20px;color:#9ca3af;font-size:13px">No current orders</div>';
+  t.querySelectorAll('.ticket').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;render();});
+}
+
+function renderDetail(){
+  const d=document.getElementById('detail');
+  const o=orders.find(x=>x.id===selId);
+  if(!o){d.innerHTML='<div class="empty">Select an order</div>';return;}
+  const s=STATUS[o.status];
+  let strip;
+  if(o.enriching){ strip = `<div class="thinking"><span class="spinner"></span>Claude is routing this order…</div>`; }
+  else if(o.ai){
+    strip = `<span class="chip station ${STATIONS[o.ai.station]}">${o.ai.station}</span>${etaChip(o)}` +
+      (o.ai.allergens.length?`<span class="chip allergen">⚠ Allergen: ${o.ai.allergens.join(', ')}</span>`:'');
+  } else strip='';
+  d.innerHTML = `
+    <div class="actionbar"><div>Reassign</div><div>Print</div><div>Cancel</div><div>Options</div></div>
+    <div class="aistrip">${strip}</div>
+    <div class="cust">
+      <div class="row"><span>${o.type==='pickup'?'🛍️':'🚚'}</span><span class="name">${o.who}</span></div>
+      <div class="oid">Order ID : ${o.oid}</div>
+      ${o.note?`<div class="note">Note: "${o.note}"</div>`:''}
+    </div>
+    <div class="items">${o.items.map(([n,p])=>`<div class="r"><span>${n}</span><b>${p}</b></div>`).join('')}</div>
+    <div class="foot"><button class="adv ${s.cls}" id="adv">${s.btn}</button></div>`;
+  const adv=document.getElementById('adv');
+  if(adv) adv.onclick=()=>{ if(s.next){o.status=s.next; render();} };
+}
+function render(){renderList();renderDetail();}
+
+// stamp placedAt from placedAgo
+orders.forEach(o=>o.placedAt = now() - o.placedAgo*60000);
+
+// New order arrives -> appears instantly as "received" with no AI -> Claude enriches after ~1.6s
+let nextId=1043;
+document.getElementById('newbtn').onclick=()=>{
+  const o={ id:nextId, who:'14 Hill Road, M21 9WX', type:'delivery', oid:nextId, placedAt:now(), status:'received',
+    note:'severe nut allergy please',
+    items:[['1 × Chicken Satay Pizza','£11.50'],['1 × Onion Rings','£3.50']],
+    enriching:true, ai:null };
+  nextId++;
+  orders.unshift(o); selId=o.id; render();
+  setTimeout(()=>{ o.enriching=false; o.ai={station:'fryer',prep:9,allergens:['nuts','gluten']}; render(); }, 1600);
+};
+
+// live clock so the ETA ticks
+setInterval(()=>{ clock=now(); renderDetail(); }, 1000);
+render();
+</script>
+</body>
+</html>
