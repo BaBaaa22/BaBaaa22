@@ -1,0 +1,132 @@
+{
+  // Modified Order entity.
+  // Additions vs the current base44/entities/Order.jsonc are marked  // + AI / + WORKFORCE
+  // Everything else is byte-identical to the existing entity so this is a safe,
+  // additive change (all new fields optional, no change to required[] or rls).
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": { "type": "string" },
+    "order_type": {
+      "type": "string",
+      "enum": ["delivery", "collection"]
+    },
+    "status": {
+      "type": "string",
+      // NOTE: enum unchanged. The EPOS UI currently writes "preparing"; the
+      // recommended reconciliation is to fix the UI to use "in_kitchen"
+      // (see entities/README.md §Status reconciliation) rather than add a
+      // synonym here. Do NOT add "preparing" unless you choose the UI-stays
+      // option in that note.
+      "enum": ["received", "in_kitchen", "out_for_delivery", "ready", "completed", "cancelled"],
+      "default": "received"
+    },
+    "customer_name": { "type": "string" },
+    "customer_phone": { "type": "string" },
+    "customer_email": { "type": "string" },
+    "delivery_address": { "type": "string" },
+    "delivery_postcode": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_name": { "type": "string" },
+          "quantity": { "type": "number" },
+          "base_price": { "type": "number" },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "group_name": { "type": "string" },
+                "option_name": { "type": "string" },
+                "price_adjustment": { "type": "number" }
+              }
+            }
+          },
+          "item_total": { "type": "number" }
+        }
+      }
+    },
+    "subtotal": { "type": "number" },
+    "delivery_charge": { "type": "number", "default": 0 },
+    "discount_amount": { "type": "number", "default": 0 },
+    "coupon_code": { "type": "string" },
+    "total": { "type": "number" },
+    "payment_method": {
+      "type": "string",
+      "enum": ["card", "cash"]
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": ["pending", "paid", "refunded"],
+      "default": "pending"
+    },
+    "notes": { "type": "string" },
+
+    // + AI — written by the claudeAssist function (trigger T1). All optional.
+    "ai_station": {
+      "type": "string",
+      "description": "Primary kitchen station assigned by Claude. 'unassigned' on AI failure (fail-open)."
+    },
+    "ai_prep_time": {
+      "type": "number",
+      "description": "Estimated minutes from accept to ready, per Claude (1-120)."
+    },
+    "ai_ticket_groups": {
+      "type": "array",
+      "description": "Items grouped by the station that should make them.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "station": { "type": "string" },
+          "items": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "ai_allergen_flags": {
+      "type": "array",
+      "description": "Allergens present / conflicts vs the customer note. Empty = none.",
+      "items": { "type": "string" }
+    },
+    "ai_complexity": {
+      "type": "string",
+      "enum": ["simple", "standard", "complex"]
+    },
+    "ai_status": {
+      "type": "string",
+      "description": "AI enrichment status, for observability.",
+      "enum": ["ok", "skipped", "error"]
+    },
+
+    // + WORKFORCE — append one entry on every status change (EPOS + automations).
+    // Enables prep-time-vs-estimate and throughput analytics (domain in 05).
+    // Base44 already stamps created_date/updated_date; this captures the
+    // per-transition timeline those don't give you.
+    "status_history": {
+      "type": "array",
+      "description": "Ordered log of status transitions with timestamps.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "at": { "type": "string", "format": "date-time" },
+          "by": { "type": "string", "description": "staff email or 'system'" }
+        }
+      }
+    }
+  },
+  "required": ["order_type", "customer_name", "customer_phone"],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        { "created_by": "{{user.email}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}

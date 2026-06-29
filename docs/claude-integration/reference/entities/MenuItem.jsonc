@@ -1,0 +1,68 @@
+{
+  // Modified MenuItem entity.
+  // Only addition vs current base44/entities/MenuItem.jsonc is "cost" (// + MARGIN).
+  // Additive and optional — existing items get null cost and are simply excluded
+  // from margin analysis until backfilled.
+  "name": "MenuItem",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "description": "Item name" },
+    "description": { "type": "string", "description": "Item description" },
+    "category": { "type": "string", "description": "Main category" },
+    "subcategory": { "type": "string", "description": "Subcategory" },
+    "base_price": { "type": "number", "description": "Base price in GBP" },
+
+    // + MARGIN — food/ingredient cost in GBP. Unblocks margin analysis and the
+    // menu-engineering matrix (05 §5.2). Without it Claude can only rank by
+    // revenue, which flatters low-margin volume items.
+    "cost": {
+      "type": "number",
+      "description": "Food/ingredient cost in GBP (COGS). Used for margin = base_price - cost."
+    },
+
+    "is_vegetarian": { "type": "boolean", "default": false },
+    "is_spicy": { "type": "boolean", "default": false },
+    "is_available": { "type": "boolean", "default": true },
+    "available_for_delivery": { "type": "boolean", "default": true },
+    "available_for_collection": { "type": "boolean", "default": true },
+    "allergens": { "type": "array", "items": { "type": "string" } },
+    "modifier_groups": {
+      "type": "array",
+      "description": "Array of modifier group objects",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "is_required": { "type": "boolean" },
+          "min_selections": { "type": "number" },
+          "max_selections": { "type": "number" },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "price_adjustment": { "type": "number" },
+                "is_available": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sort_order": { "type": "number", "default": 0 }
+  },
+  "required": ["name", "category", "base_price"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": {
+      "$or": [
+        { "data.is_available": true },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } },
+    "write": { "user_condition": { "role": "admin" } }
+  }
+}

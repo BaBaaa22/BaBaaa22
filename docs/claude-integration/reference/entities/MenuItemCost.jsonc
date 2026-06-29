@@ -1,0 +1,25 @@
+{
+  // OPTIONAL / RECOMMENDED alternative to putting `cost` on MenuItem.
+  //
+  // Why: MenuItem.read RLS is PUBLIC for available items, so a `cost` field on
+  // MenuItem is visible to anyone (competitors can read your margins). This
+  // entity keeps COGS in an admin-only table instead. Pick ONE approach:
+  //   (a) MenuItem.cost      — simplest, but COGS is publicly readable.
+  //   (b) MenuItemCost       — admin-only; join on menu_item_id for analytics.
+  // The analytics tier (n8n, service role) can read either; only (b) protects COGS.
+  "name": "MenuItemCost",
+  "type": "object",
+  "properties": {
+    "menu_item_id": { "type": "string", "description": "FK to MenuItem.id (denormalised)." },
+    "menu_item_name": { "type": "string", "description": "For readability in reports." },
+    "cost": { "type": "number", "description": "Food/ingredient cost in GBP (COGS)." },
+    "effective_from": { "type": "string", "format": "date", "description": "Lets cost change over time." }
+  },
+  "required": ["menu_item_id", "cost"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}

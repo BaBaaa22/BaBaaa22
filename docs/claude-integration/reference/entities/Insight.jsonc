@@ -1,0 +1,65 @@
+{
+  // NEW entity. Lands every analytics output (nightly digest, forecasts,
+  // segments, menu engineering, workforce). The AdminDashboard reads the most
+  // recent Insight of a given type. Written by the n8n batch tier via a service
+  // token; read by admins only.
+  "name": "Insight",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Which analysis produced this insight.",
+      "enum": [
+        "daily_digest",
+        "customer_behaviour",
+        "demand_forecast",
+        "menu_engineering",
+        "workforce",
+        "clv",
+        "busy_prediction"
+      ]
+    },
+    "period": {
+      "type": "string",
+      "description": "The window this covers, e.g. '2026-06-28' or '2026-W26' or '2026-06'."
+    },
+    "headline": {
+      "type": "string",
+      "description": "One-line summary for the dashboard strip."
+    },
+    "payload_json": {
+      "type": "object",
+      "description": "Structured analysis output (Claude tool result). Free-form per type.",
+      "additionalProperties": true
+    },
+    "recommended_action": {
+      "type": "string",
+      "description": "Single suggested action for the owner (a proposal, not auto-applied)."
+    },
+    "confidence": {
+      "type": "string",
+      "description": "How much to trust this output.",
+      "enum": ["low", "medium", "high"]
+    },
+    "basis": {
+      "type": "string",
+      "description": "What the insight is grounded in, e.g. 'last 6 same-weekdays, 142 orders'."
+    },
+    "acted_on": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set true when the owner applies the recommendation — closes the advice->outcome loop."
+    },
+    "model": {
+      "type": "string",
+      "description": "Model used, e.g. claude-sonnet-4-6, for auditing."
+    }
+  },
+  "required": ["type", "period"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}

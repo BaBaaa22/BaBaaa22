@@ -1,0 +1,44 @@
+{
+  // OPTIONAL entity (decision required — see 05 §5.7 q3). A derived aggregate
+  // keyed on the canonical customer identity (phone OR created_by email — you
+  // choose). Written by the analytics tier; not edited by hand. Unblocks CLV
+  // and segmentation at scale without re-scanning all orders each run.
+  //
+  // Privacy note: this builds a persistent per-customer profile — confirm it's
+  // covered by your privacy policy and that deleteMyAccount also clears it.
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "customer_key": {
+      "type": "string",
+      "description": "Canonical identity — phone or email. Pick one and be consistent."
+    },
+    "name": { "type": "string" },
+    "phone": { "type": "string" },
+    "email": { "type": "string" },
+    "first_order_date": { "type": "string", "format": "date-time" },
+    "last_order_date": { "type": "string", "format": "date-time" },
+    "order_count": { "type": "number", "default": 0 },
+    "total_spent": { "type": "number", "default": 0 },
+    "avg_order_value": { "type": "number" },
+    "segment": {
+      "type": "string",
+      "description": "Claude-assigned segment label, e.g. 'weekly regular', 'lapsed', 'big-group'."
+    },
+    "churn_risk": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "favourite_items": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["customer_key"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}

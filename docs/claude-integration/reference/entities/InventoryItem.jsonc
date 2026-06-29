@@ -1,0 +1,33 @@
+{
+  // NEW entity (defer — largest build). Enables true inventory management:
+  // decrement-on-order, reorder alerts, demand-vs-stock reconciliation.
+  // Until this exists, Claude can only flag demand velocity, not manage stock
+  // (05 §5.3). Admin-only.
+  "name": "InventoryItem",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "description": "Stock item, e.g. 'Mozzarella 1kg'." },
+    "unit": { "type": "string", "description": "Counting unit, e.g. 'kg', 'each', 'box'." },
+    "stock_level": { "type": "number", "description": "Current quantity on hand." },
+    "reorder_point": { "type": "number", "description": "Trigger a reorder alert at/below this." },
+    "reorder_quantity": { "type": "number", "description": "Suggested amount to reorder." },
+    "linked_menu_items": {
+      "type": "array",
+      "description": "MenuItem names/ids this stock item is consumed by (for decrement-on-order).",
+      "items": { "type": "string" }
+    },
+    "consumption_per_unit": {
+      "type": "number",
+      "description": "How much of this stock a single linked menu item consumes (optional, for auto-decrement)."
+    },
+    "supplier": { "type": "string" },
+    "last_counted": { "type": "string", "format": "date-time" }
+  },
+  "required": ["name", "unit"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}
