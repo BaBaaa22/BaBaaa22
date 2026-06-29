@@ -1,0 +1,61 @@
+EPOS AI-fields render patch. Adds, in src/pages/AdminEPOS.jsx, a station-colour
+map and an "AI enrichment strip" in the OrderDetail panel that shows the kitchen
+station chip, a live prep-time ETA/Overdue countdown, and a red allergen-conflict
+badge. All guarded by order.ai_* so it renders NOTHING until the claudeAssist
+function (trigger T1) populates those fields — safe to ship before the AI is live.
+
+Independent of status-enum-reconciliation.patch; either order applies. From the
+app repo root:
+    git apply docs/claude-integration/reference/epos-ai-fields.diff
+
+diff --git a/src/pages/AdminEPOS.jsx b/src/pages/AdminEPOS.jsx
+index de71976..e1430cb 100644
+--- a/src/pages/AdminEPOS.jsx
++++ b/src/pages/AdminEPOS.jsx
+@@ -57,6 +57,12 @@ const STATUS_CONFIG = {
+   cancelled: { label: 'Cancelled', bg: 'bg-red-400',    icon: XCircle },
+ };
+ 
++// AI kitchen-station colours (written by the claudeAssist function, trigger T1)
++const AI_STATION_COLORS = {
++  pizza: 'bg-[#c0392b]', fryer: 'bg-amber-600', grill: 'bg-orange-700',
++  cold: 'bg-teal-600', drinks: 'bg-gray-700', dessert: 'bg-green-600', unassigned: 'bg-slate-400',
++};
++
+ function playOrderAlert() {
+   try {
+     const ctx = new (window.AudioContext || window.webkitAudioContext)();
+@@ -414,6 +420,33 @@ function OrderDetail({ order, onAdvance, onCancel }) {
+         </button>
+       </div>
+ 
++      {/* AI enrichment strip — claudeAssist (T1). Renders nothing until ai_* fields are set. */}
++      {(order.ai_station || order.ai_prep_time > 0 || order.ai_allergen_flags?.length > 0) && (
++        <div className="flex flex-wrap items-center gap-2 px-5 py-2 border-b border-gray-100 shrink-0 bg-gray-50">
++          {order.ai_station && (
++            <span className={cn('px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide text-white', AI_STATION_COLORS[order.ai_station] || 'bg-slate-500')}>
++              {order.ai_station}
++            </span>
++          )}
++          {order.ai_prep_time > 0 && (() => {
++            const elapsed = order.created_date ? differenceInMinutes(new Date(), new Date(order.created_date)) : 0;
++            const remaining = order.ai_prep_time - elapsed;
++            return (
++              <span className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
++                remaining < 0 ? 'bg-red-100 text-red-700' : remaining <= 5 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700')}>
++                <Clock className="w-3 h-3" />
++                {remaining < 0 ? `Overdue ${Math.abs(remaining)}m` : `ETA ~${remaining}m`}
++              </span>
++            );
++          })()}
++          {order.ai_allergen_flags?.length > 0 && (
++            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">
++              ⚠ Allergen: {order.ai_allergen_flags.join(', ')}
++            </span>
++          )}
++        </div>
++      )}
++
+       {/* Customer / address block */}
+       <div className="px-5 py-4 border-b border-gray-100 shrink-0">
+         <div className="flex items-start gap-2 mb-2">
