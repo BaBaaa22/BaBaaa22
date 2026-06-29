@@ -1,0 +1,80 @@
+Status-enum reconciliation: standardise the EPOS, dashboard, and customer
+order-status screens on the Order entity value `in_kitchen` (they currently
+write/read `preparing`). AdminOrders.jsx / OrderHistory.jsx already use the
+correct values, so production data is a mix — run the data backfill in
+entities/README.md BEFORE deploying. Display labels stay "Preparing"; only the
+stored status VALUE changes.
+
+Apply from the APP repo root (where src/ lives):
+    git apply docs/claude-integration/reference/status-enum-reconciliation.patch
+
+diff --git a/src/pages/AdminDashboard.jsx b/src/pages/AdminDashboard.jsx
+index a557c3b..2ce8b50 100644
+--- a/src/pages/AdminDashboard.jsx
++++ b/src/pages/AdminDashboard.jsx
+@@ -36,7 +36,7 @@ export default function AdminDashboard() {
+ 
+   const completed = todayOrders.filter(o => o.status === 'completed');
+   const prevCompleted = prevOrders.filter(o => o.status === 'completed');
+-  const openOrders = orders.filter(o => ['received', 'in_kitchen', 'ready', 'preparing'].includes(o.status));
++  const openOrders = orders.filter(o => ['received', 'in_kitchen', 'ready'].includes(o.status));
+ 
+   const netSales = completed.reduce((s, o) => s + (o.total || 0), 0);
+   const prevNetSales = prevCompleted.reduce((s, o) => s + (o.total || 0), 0);
+@@ -143,7 +143,7 @@ export default function AdminDashboard() {
+                   <span className="text-sm font-medium text-gray-700">£{order.total?.toFixed(2)}</span>
+                   <span className={cn("px-2 py-0.5 rounded-full text-xs font-semibold",
+                     order.status === 'received' ? 'bg-blue-100 text-blue-700' :
+-                    order.status === 'preparing' ? 'bg-orange-100 text-orange-700' :
++                    order.status === 'in_kitchen' ? 'bg-orange-100 text-orange-700' :
+                     'bg-green-100 text-green-700'
+                   )}>{order.status}</span>
+                 </div>
+diff --git a/src/pages/AdminEPOS.jsx b/src/pages/AdminEPOS.jsx
+index de71976..7f536d0 100644
+--- a/src/pages/AdminEPOS.jsx
++++ b/src/pages/AdminEPOS.jsx
+@@ -48,10 +48,10 @@ const CATEGORY_COLORS = {
+ };
+ const DEFAULT_COLOR = 'bg-[#3a8fa0] hover:bg-[#2e7a8a]';
+ 
+-const STATUS_FLOW = ['received', 'preparing', 'ready', 'completed'];
++const STATUS_FLOW = ['received', 'in_kitchen', 'ready', 'completed'];
+ const STATUS_CONFIG = {
+   received:  { label: 'New',       bg: 'bg-blue-500',   icon: Clock },
+-  preparing: { label: 'Preparing', bg: 'bg-orange-500', icon: ChefHat },
++  in_kitchen: { label: 'Preparing', bg: 'bg-orange-500', icon: ChefHat },
+   ready:     { label: 'Ready',     bg: 'bg-green-600',  icon: Package },
+   completed: { label: 'Done',      bg: 'bg-gray-400',   icon: CheckCircle2 },
+   cancelled: { label: 'Cancelled', bg: 'bg-red-400',    icon: XCircle },
+@@ -387,7 +387,7 @@ function OrderDetail({ order, onAdvance, onCancel }) {
+   const isPaid = order.payment_status === 'paid' || order.payment_method === 'card';
+   const isDelivery = order.order_type === 'delivery';
+   const canAdvance = !['completed', 'cancelled'].includes(order.status);
+-  const advanceLabel = order.status === 'received' ? 'On the way' : order.status === 'preparing' ? 'Mark Ready' : 'Complete';
++  const advanceLabel = order.status === 'received' ? 'On the way' : order.status === 'in_kitchen' ? 'Mark Ready' : 'Complete';
+ 
+   return (
+     <div className="flex-1 flex flex-col overflow-hidden bg-white">
+@@ -557,7 +557,7 @@ function OrdersPanel({ unacknowledgedIds, onAcknowledge }) {
+   const cancel = (order) => updateMutation.mutate({ id: order.id, data: { status: 'cancelled' } });
+ 
+   const tabConfig = [
+-    { key: 'current',   label: 'CURRENT',    filter: o => ['received', 'preparing'].includes(o.status) },
++    { key: 'current',   label: 'CURRENT',    filter: o => ['received', 'in_kitchen'].includes(o.status) },
+     { key: 'on_way',    label: 'ON THE WAY',  filter: o => o.status === 'ready' },
+     { key: 'completed', label: 'COMPLETED',   filter: o => ['completed', 'cancelled'].includes(o.status) },
+   ];
+diff --git a/src/pages/OrderStatus.jsx b/src/pages/OrderStatus.jsx
+index f9f33ae..b4eab1e 100644
+--- a/src/pages/OrderStatus.jsx
++++ b/src/pages/OrderStatus.jsx
+@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
+ 
+ const STATUSES = [
+   { key: 'received', label: 'Order Received', icon: Clock, color: 'text-blue-500' },
+-  { key: 'preparing', label: 'Preparing', icon: ChefHat, color: 'text-orange-500' },
++  { key: 'in_kitchen', label: 'Preparing', icon: ChefHat, color: 'text-orange-500' },
+   { key: 'ready', label: 'Ready', icon: Package, color: 'text-green-500' },
+   { key: 'completed', label: 'Completed', icon: CheckCircle2, color: 'text-green-600' },
+ ];

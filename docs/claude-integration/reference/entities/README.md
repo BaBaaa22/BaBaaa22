@@ -22,9 +22,30 @@ Ready-to-apply Base44 entity definitions for the prerequisites in the audit
 The `Order` entity enum is already correct (`received, in_kitchen, out_for_delivery, ready, completed, cancelled`). The mismatch is that the **EPOS UI writes `preparing`** instead of `in_kitchen`.
 
 **Recommended (and what `Order.jsonc` assumes):** leave the enum as-is and fix the UI.
-- `src/pages/AdminEPOS.jsx`: change `STATUS_FLOW = ['received','preparing','ready','completed']` → `['received','in_kitchen','ready','completed']`, and the `STATUS_CONFIG` key `preparing` → `in_kitchen` (keep the label "Preparing" for display).
-- `src/pages/AdminDashboard.jsx`: change the `openOrders` filter `['received','in_kitchen','ready','preparing']` → `['received','in_kitchen','ready']`.
-- One-off data fix: update any existing orders with `status: "preparing"` to `in_kitchen`.
+
+A ready-to-apply unified diff is at [`../status-enum-reconciliation.patch`](../status-enum-reconciliation.patch). Apply it from the **app repo root** (where `src/` lives):
+
+```sh
+git apply docs/claude-integration/reference/status-enum-reconciliation.patch
+```
+
+It changes three files (display labels stay "Preparing"; only the stored value changes):
+- `src/pages/AdminEPOS.jsx` — `STATUS_FLOW`, the `STATUS_CONFIG` key, the advance-label check, and the CURRENT tab filter: `preparing` → `in_kitchen`.
+- `src/pages/AdminDashboard.jsx` — `openOrders` filter (drops the duplicate `preparing`) and the status-colour check.
+- `src/pages/OrderStatus.jsx` — the customer stepper key `preparing` → `in_kitchen`.
+
+> **Why three files, not two:** the app has **two** admin order screens. `AdminOrders.jsx` and `OrderHistory.jsx` already use the correct entity values (`in_kitchen`, `out_for_delivery`); only `AdminEPOS.jsx`, `AdminDashboard.jsx`, and the customer `OrderStatus.jsx` use `preparing`. So existing production data is almost certainly a **mix** of both values depending on which screen set the status — the backfill below is not optional.
+
+**One-off data backfill (run BEFORE deploying the patch).** Update existing `preparing` orders to `in_kitchen` so the two screens agree. Via the Base44 MCP or a one-shot service-role function:
+
+```ts
+const stuck = await base44.asServiceRole.entities.Order.filter({ status: 'preparing' });
+for (const o of stuck) {
+  await base44.asServiceRole.entities.Order.update(o.id, { status: 'in_kitchen' });
+}
+```
+
+**Out of scope (separate enhancement):** the EPOS flow and the customer stepper don't model `out_for_delivery` (the EPOS collapses delivery into `ready`). Reconciling `preparing` does **not** add `out_for_delivery` to those screens — that's a deliberate, separate UX change if you want delivery customers to see an "out for delivery" step.
 
 **Alternative (not recommended):** add `"preparing"` to the entity enum. This leaves two synonyms forever and makes every status-driven query/automation handle both. Only do this if changing the UI is genuinely off the table.
 
