@@ -1,0 +1,90 @@
+{
+  "name": "Discount",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "discount_type": {
+      "type": "string",
+      "enum": [
+        "percent",
+        "amount"
+      ],
+      "default": "percent"
+    },
+    "discount_value": {
+      "type": "number"
+    },
+    "min_order_value": {
+      "type": "number",
+      "default": 0
+    },
+    "applies_to": {
+      "type": "string",
+      "enum": [
+        "both",
+        "delivery",
+        "collection"
+      ],
+      "default": "both"
+    },
+    "days_of_week": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "end_time": {
+      "type": "string"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "first_time_only": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "discount_value"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.is_active": true
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

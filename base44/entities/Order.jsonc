@@ -1,0 +1,215 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": {
+      "type": "string"
+    },
+    "order_type": {
+      "type": "string",
+      "enum": [
+        "delivery",
+        "collection"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "received",
+        "in_kitchen",
+        "out_for_delivery",
+        "ready",
+        "completed",
+        "cancelled"
+      ],
+      "default": "received"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "customer_phone": {
+      "type": "string"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "delivery_address": {
+      "type": "string"
+    },
+    "delivery_postcode": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "base_price": {
+            "type": "number"
+          },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "group_name": {
+                  "type": "string"
+                },
+                "option_name": {
+                  "type": "string"
+                },
+                "price_adjustment": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "item_total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "delivery_charge": {
+      "type": "number",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "coupon_code": {
+      "type": "string"
+    },
+    "total": {
+      "type": "number"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "card",
+        "cash"
+      ]
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "refunded"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "ai_station": {
+      "type": "string",
+      "description": "Primary kitchen station assigned by Claude (claudeAssist). 'unassigned' on AI failure."
+    },
+    "ai_prep_time": {
+      "type": "number",
+      "description": "Estimated prep time in minutes per Claude (1-120)."
+    },
+    "ai_ticket_groups": {
+      "type": "array",
+      "description": "Items grouped by station for kitchen tickets.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "station": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ai_allergen_flags": {
+      "type": "array",
+      "description": "Allergens present or conflicting with the customer note. Empty = none.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ai_complexity": {
+      "type": "string",
+      "enum": [
+        "simple",
+        "standard",
+        "complex"
+      ]
+    },
+    "ai_status": {
+      "type": "string",
+      "description": "AI enrichment status for observability.",
+      "enum": [
+        "ok",
+        "skipped",
+        "error"
+      ]
+    },
+    "status_history": {
+      "type": "array",
+      "description": "Ordered log of status transitions with timestamps.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "by": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "order_type",
+    "customer_name",
+    "customer_phone"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

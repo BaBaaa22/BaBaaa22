@@ -1,0 +1,144 @@
+{
+  "name": "StoreSettings",
+  "type": "object",
+  "properties": {
+    "setting_key": {
+      "type": "string",
+      "description": "Unique key for the setting"
+    },
+    "store_name": {
+      "type": "string",
+      "default": "Marco's"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "shop_postcode": {
+      "type": "string",
+      "description": "The shop's own postcode, used as origin for distance-based delivery fee calculation"
+    },
+    "is_open": {
+      "type": "boolean",
+      "default": true
+    },
+    "allow_preorders": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow customers to place orders when the shop is closed, with a future pickup/delivery time"
+    },
+    "opening_hours": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string"
+          },
+          "open": {
+            "type": "string"
+          },
+          "close": {
+            "type": "string"
+          },
+          "is_closed": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "delivery_zones": {
+      "type": "array",
+      "description": "Legacy postcode-prefix zones (kept for compatibility)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "postcode_prefix": {
+            "type": "string"
+          },
+          "zone_name": {
+            "type": "string"
+          },
+          "delivery_charge": {
+            "type": "number"
+          },
+          "minimum_order": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "distance_zones": {
+      "type": "array",
+      "description": "Distance-based delivery zones (radius in miles from the shop postcode)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "max_miles": {
+            "type": "number"
+          },
+          "zone_name": {
+            "type": "string"
+          },
+          "delivery_charge": {
+            "type": "number"
+          },
+          "minimum_order": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "use_distance_zones": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, use distance-based zones instead of postcode-prefix zones"
+    },
+    "default_delivery_charge": {
+      "type": "number",
+      "default": 2.5
+    },
+    "minimum_delivery_order": {
+      "type": "number",
+      "default": 10
+    },
+    "accept_card": {
+      "type": "boolean",
+      "default": true
+    },
+    "accept_cash": {
+      "type": "boolean",
+      "default": true
+    },
+    "offer_banner_text": {
+      "type": "string"
+    },
+    "offer_banner_active": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "setting_key"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "name": "PaymentGateway",
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "paypal",
+        "square",
+        "sumup",
+        "worldpay",
+        "opayo",
+        "neropay"
+      ],
+      "description": "Payment gateway provider"
+    },
+    "is_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "test",
+        "live"
+      ],
+      "default": "test"
+    },
+    "publishable_key": {
+      "type": "string"
+    },
+    "secret_key": {
+      "type": "string"
+    },
+    "webhook_secret": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "client_secret": {
+      "type": "string"
+    },
+    "merchant_id": {
+      "type": "string"
+    },
+    "access_token": {
+      "type": "string"
+    },
+    "location_id": {
+      "type": "string"
+    },
+    "api_key": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "provider"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

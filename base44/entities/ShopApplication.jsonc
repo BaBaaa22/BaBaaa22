@@ -1,0 +1,90 @@
+{
+  "name": "ShopApplication",
+  "type": "object",
+  "properties": {
+    "shop_name": {
+      "type": "string"
+    },
+    "owner_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "cuisine_type": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "menu_csv_url": {
+      "type": "string"
+    },
+    "payment_provider": {
+      "type": "string",
+      "enum": [
+        "neropay",
+        "sumup",
+        "stripe",
+        "square",
+        "cash_only"
+      ],
+      "default": "cash_only"
+    },
+    "payment_publishable_key": {
+      "type": "string"
+    },
+    "payment_secret_key": {
+      "type": "string"
+    },
+    "payment_merchant_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "live"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "app_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "shop_name",
+    "owner_name",
+    "email",
+    "phone"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

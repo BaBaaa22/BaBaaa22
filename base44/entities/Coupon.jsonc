@@ -1,0 +1,88 @@
+{
+  "name": "Coupon",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Coupon code"
+    },
+    "discount_type": {
+      "type": "string",
+      "enum": [
+        "percent",
+        "amount"
+      ],
+      "default": "percent"
+    },
+    "discount_value": {
+      "type": "number"
+    },
+    "min_order_value": {
+      "type": "number",
+      "default": 0
+    },
+    "free_delivery": {
+      "type": "boolean",
+      "default": false
+    },
+    "applies_to": {
+      "type": "string",
+      "enum": [
+        "both",
+        "delivery",
+        "collection"
+      ],
+      "default": "both"
+    },
+    "coupon_type": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "one_time",
+        "per_customer"
+      ],
+      "default": "basic"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "code",
+    "discount_value"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.is_active": true
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

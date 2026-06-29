@@ -1,0 +1,24 @@
+{
+  "name": "Marco's Pizzeria",
+  "short_name": "Marco's",
+  "description": "Order pizza, kebabs, burgers and more from Marco's Pizzeria",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#dc2626",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69ab3c5ee6dd34e24ec02946/1590bd894_1646650230phpNSMmxN.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69ab3c5ee6dd34e24ec02946/1590bd894_1646650230phpNSMmxN.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
