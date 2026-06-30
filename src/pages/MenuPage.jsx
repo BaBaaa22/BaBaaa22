@@ -7,7 +7,7 @@ import CustomizationModal from '../components/menu/CustomizationModal';
 import SizePickerModal from '../components/menu/SizePickerModal';
 import CartPanel from '../components/cart/CartPanel';
 import CategoryAccordion from '../components/menu/CategoryAccordion';
-import { ShoppingBag, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Search, Sparkles, Loader2, X } from 'lucide-react';
 
 const CATEGORY_ORDER = [
   'BASIC PIZZAS','HAM PIZZAS','CHICKEN PIZZAS','HOT & SPICY PIZZAS',
@@ -53,6 +53,10 @@ export default function MenuPage() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [sizePicker, setSizePicker] = useState(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+  // AI menu search (trigger T5). aiResults: null = browsing; array = showing results.
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiResults, setAiResults] = useState(null);
+  const [aiSearching, setAiSearching] = useState(false);
 
   const { data: settingsArr } = useQuery({
     queryKey: ['store-settings'],
@@ -121,6 +125,20 @@ export default function MenuPage() {
     }
   }, [openCategory]);
 
+  const runSmartSearch = async () => {
+    const q = aiQuery.trim();
+    if (q.length < 2) { setAiResults(null); return; }
+    setAiSearching(true);
+    try {
+      const res = await base44.functions.invoke('smartMenuSearch', { query: q });
+      setAiResults(Array.isArray(res.data?.matches) ? res.data.matches : []);
+    } catch {
+      setAiResults([]);
+    }
+    setAiSearching(false);
+  };
+  const clearSmartSearch = () => { setAiQuery(''); setAiResults(null); };
+
   const handleAddToCart = (cartItem) => setCart(prev => [...prev, cartItem]);
   const handleUpdateQuantity = (idx, newQty) => {
     if (newQty <= 0) {
@@ -185,6 +203,32 @@ export default function MenuPage() {
           </button>
         </div>
 
+        {/* AI menu search (trigger T5) */}
+        <div className="px-4 pb-2 pt-1">
+          <div className="relative max-w-2xl">
+            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
+            <input
+              value={aiQuery}
+              onChange={e => setAiQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') runSmartSearch(); }}
+              placeholder="Try “spicy chicken under £8, no dairy”…"
+              className="w-full pl-9 pr-28 py-2.5 rounded-full border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400"
+            />
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {(aiQuery || aiResults !== null) && (
+                <button onClick={clearSmartSearch} className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-200">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button onClick={runSmartSearch} disabled={aiSearching}
+                className="flex items-center gap-1 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-red-700 disabled:opacity-60">
+                {aiSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Category quick-nav pills — tapping opens the matching accordion section */}
         <div ref={categoryBarRef} className="flex gap-2 overflow-x-auto px-4 pb-3 pt-1 no-scrollbar">
           {sortedCategories.map(cat => (
@@ -227,6 +271,30 @@ export default function MenuPage() {
             {isLoading ? (
               <div className="space-y-3">
                 {[1,2,3,4,5].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}
+              </div>
+            ) : aiResults !== null ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-red-500" />
+                    {aiResults.length} result{aiResults.length === 1 ? '' : 's'} for “{aiQuery}”
+                  </h2>
+                  <button onClick={clearSmartSearch} className="text-xs font-semibold text-red-600 hover:underline">Clear</button>
+                </div>
+                {aiResults.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-8 text-center">No matches — try different words, or browse the full menu.</p>
+                ) : (
+                  <CategoryAccordion
+                    category="Search results"
+                    icon="✨"
+                    items={aiResults.map(m => available.find(i => i.name === m.name)).filter(Boolean)}
+                    subcategories={['']}
+                    isOpen={true}
+                    onToggle={() => {}}
+                    onSelectItem={setSelectedItem}
+                    registerRef={() => {}}
+                  />
+                )}
               </div>
             ) : (
               <div className="space-y-3">

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Marco's — smart menu search</title>
+<style>
+  *{box-sizing:border-box;margin:0;} body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#fff;color:#111827;}
+  .hdr{position:sticky;top:0;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-bottom:1px solid #e5e7eb;}
+  .bar{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 16px;}
+  .logo{width:34px;height:34px;border-radius:9px;background:#dc2626;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(220,38,38,.35);}
+  .brand b{font-weight:900;} .brand .p{color:#dc2626;font-weight:800;}
+  .cart{margin-left:auto;background:#dc2626;color:#fff;border:none;border-radius:9999px;padding:9px 16px;font-weight:700;font-size:13px;display:flex;gap:7px;align-items:center;}
+  .searchwrap{max-width:760px;margin:0 auto;padding:2px 16px 10px;}
+  .search{position:relative;}
+  .search .spark{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#ef4444;font-size:15px;}
+  .search input{width:100%;padding:11px 130px 11px 34px;border:1px solid #e5e7eb;background:#f9fafb;border-radius:9999px;font-size:14px;outline:none;}
+  .search input:focus{border-color:#f87171;box-shadow:0 0 0 3px rgba(239,68,68,.18);background:#fff;}
+  .search .actions{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:6px;align-items:center;}
+  .clear{width:28px;height:28px;border:none;background:none;color:#9ca3af;border-radius:50%;font-size:15px;cursor:pointer;}
+  .go{display:flex;gap:6px;align-items:center;background:#dc2626;color:#fff;border:none;border-radius:9999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+  .pills{max-width:760px;margin:0 auto;display:flex;gap:8px;overflow:auto;padding:2px 16px 12px;}
+  .pill{white-space:nowrap;padding:6px 12px;border-radius:9999px;background:#f3f4f6;color:#374151;font-size:12px;font-weight:700;}
+  .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .body{max-width:760px;margin:0 auto;padding:16px;}
+  .reshead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .reshead h2{font-size:15px;font-weight:800;display:flex;align-items:center;gap:6px;}
+  .reshead .clr{font-size:12px;color:#dc2626;font-weight:700;cursor:pointer;background:none;border:none;}
+  .card{display:flex;align-items:center;gap:12px;border:1px solid #eee;border-radius:14px;padding:12px 14px;margin-bottom:10px;animation:pop .3s ease both;}
+  @keyframes pop{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .card .ic{font-size:22px;}
+  .card .nm{font-weight:700;font-size:14px;}
+  .card .why{display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:11px;color:#b45309;background:#fef3c7;border-radius:9999px;padding:1px 8px;}
+  .card .pr{margin-left:auto;font-weight:800;}
+  .card .add{margin-left:12px;background:#111827;color:#fff;border:none;border-radius:9px;padding:8px 12px;font-weight:700;font-size:13px;}
+  .placeholder .row{height:54px;background:#f3f4f6;border-radius:12px;margin-bottom:10px;}
+  .muted{color:#9ca3af;font-size:13px;text-align:center;padding:30px 0;}
+</style>
+</head>
+<body>
+  <div class="hdr">
+    <div class="bar">
+      <div class="logo">M</div>
+      <div class="brand"><b>Marco's</b><span class="p"> Pizzeria</span></div>
+      <button class="cart">🛍️ Cart</button>
+    </div>
+    <div class="searchwrap">
+      <div class="search">
+        <span class="spark">✦</span>
+        <input id="q" value="spicy chicken under £8, no dairy" />
+        <div class="actions">
+          <button class="clear" id="clear">✕</button>
+          <button class="go" id="go">🔍 Search</button>
+        </div>
+      </div>
+    </div>
+    <div class="pills">
+      <span class="pill">🍕 Pizzas</span><span class="pill">🥙 Kebabs</span><span class="pill">🍔 Burgers</span>
+      <span class="pill">🍗 Fried Chicken</span><span class="pill">🌯 Wraps</span><span class="pill">🥤 Drinks</span>
+    </div>
+  </div>
+
+  <div class="body" id="body">
+    <!-- default: browse view -->
+    <div id="browse">
+      <div class="card"><span class="ic">🍕</span><div><div class="nm">Margherita</div></div><span class="pr">£8.50</span><button class="add">Add</button></div>
+      <div class="card"><span class="ic">🥙</span><div><div class="nm">Chicken Kebab</div></div><span class="pr">£7.00</span><button class="add">Add</button></div>
+      <div class="card"><span class="ic">🍔</span><div><div class="nm">Cheeseburger</div></div><span class="pr">£6.00</span><button class="add">Add</button></div>
+    </div>
+  </div>
+
+<script>
+  const RESULTS = [
+    { ic:'🌯', nm:'Peri Peri Chicken Wrap', pr:'£6.50', why:'spicy · dairy-free' },
+    { ic:'🍗', nm:'Spicy Chicken Strips',   pr:'£5.50', why:'spicy · no dairy' },
+    { ic:'🥙', nm:'Chicken Kebab',          pr:'£7.00', why:'grilled chicken · dairy-free' },
+  ];
+  const body = document.getElementById('body');
+  const go = document.getElementById('go');
+  const clearBtn = document.getElementById('clear');
+  const q = document.getElementById('q');
+
+  function browse(){
+    body.innerHTML = `<div id="browse">
+      <div class="card"><span class="ic">🍕</span><div><div class="nm">Margherita</div></div><span class="pr">£8.50</span><button class="add">Add</button></div>
+      <div class="card"><span class="ic">🥙</span><div><div class="nm">Chicken Kebab</div></div><span class="pr">£7.00</span><button class="add">Add</button></div>
+      <div class="card"><span class="ic">🍔</span><div><div class="nm">Cheeseburger</div></div><span class="pr">£6.00</span><button class="add">Add</button></div>
+    </div>`;
+  }
+  function search(){
+    go.innerHTML = '<span class="spinner"></span> Searching…';
+    body.innerHTML = `<div class="placeholder"><div class="row"></div><div class="row"></div><div class="row"></div></div>`;
+    setTimeout(() => {
+      go.innerHTML = '🔍 Search';
+      let html = `<div class="reshead"><h2>✦ ${RESULTS.length} results for “${q.value}”</h2><button class="clr" id="clr">Clear</button></div>`;
+      RESULTS.forEach((r,i) => {
+        html += `<div class="card" style="animation-delay:${i*0.08}s">
+          <span class="ic">${r.ic}</span>
+          <div><div class="nm">${r.nm}</div><span class="why">✦ ${r.why}</span></div>
+          <span class="pr">${r.pr}</span><button class="add">Add</button></div>`;
+      });
+      body.innerHTML = html;
+      document.getElementById('clr').onclick = () => { q.value=''; browse(); };
+    }, 1300);
+  }
+  go.onclick = search;
+  clearBtn.onclick = () => { q.value=''; browse(); };
+  q.addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+</script>
+</body>
+</html>
