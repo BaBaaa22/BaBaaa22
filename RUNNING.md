@@ -117,6 +117,43 @@ board stays consistent. Details: `docs/claude-integration/reference/entities/REA
 
 ---
 
+## 7. Wrap the storefront as a phone app (Android / iOS)
+
+**The storefront already exists** — it *is* Marco's Express: `Home`, `MenuPage`,
+`Checkout`, `OrderStatus`, `OrderHistory` (cart, modifiers, coupons,
+delivery/collection, payments). It is **already a PWA** (`public/manifest.json` +
+`public/sw.js`, registered in `index.html`) and **already hosted live** by Base44.
+So you wrap the **live ordering site**, not the `marco-pwa.zip` placeholder.
+
+1. **Publish** Marco's Express in Base44 → note the live URL
+   (`https://<app>.base44.app`). That URL is your working ordering site.
+2. **Put it on a domain you control** (needed so the app can run full-screen):
+   map `order.mymarco.co.uk` → the live app — a Base44 custom domain, or front it
+   with Cloudflare/Vercel. You need a domain you control to host the TWA's
+   `assetlinks.json` (you can't add files to a `*.base44.app` subdomain).
+3. **PWABuilder** (https://pwabuilder.com) → paste `https://order.mymarco.co.uk` →
+   it passes (valid manifest + SW + icon) → **Options**:
+   - **Package ID** = `uk.co.mymarco.myapp`
+   - Name `Marco's Pizzeria`, version `1.0.0`, code `1`, signing **Create new**
+   - **Generate → Download.**
+4. **Host** the `assetlinks.json` PWABuilder gives you at
+   `order.mymarco.co.uk/.well-known/assetlinks.json` (removes the URL bar).
+5. **Upload** `app-release-signed.aab` to Google Play **Internal testing**. Keep the
+   `signing.keystore` — same key for every future update.
+6. **iOS later:** same live URL via Capacitor + Xcode → App Store Connect
+   (Apple Developer $99/yr). Add push + native pay so Apple accepts it.
+
+The app then **IS the real ordering experience** and **auto-updates** whenever you
+publish changes to the storefront — no re-upload unless you change the package id,
+icon, or add native features. The `marco-pwa.zip` placeholder is only for reserving
+the Play listing *before* the domain is live; once `order.mymarco.co.uk` points at
+the real app, wrap that instead.
+
+> Food orders are physical goods — you do **not** owe Apple/Google the 15–30% cut.
+> Keep Stripe/NeroPay (~2–4% card fees) as you do now.
+
+---
+
 ## Quick reference — what's where
 
 | Thing | Path |
